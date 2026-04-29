@@ -17,8 +17,8 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
     });
 
@@ -29,12 +29,13 @@ export default function RootLayout() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inTabsGroup = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
-      // Redirect to login if user is not signed in and not in auth group
+      // Redirect to login if not authenticated and not in auth group
       router.replace('/(auth)/login');
-    } else if (user && inAuthGroup) {
-      // Redirect to home if user is signed in and in auth group
+    } else if (user && (inAuthGroup || segments[0] === undefined)) {
+      // Redirect to tabs if authenticated and in auth group or at root
       router.replace('/(tabs)');
     }
   }, [user, segments, loading]);
@@ -50,13 +51,8 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        {/* Only show the groups relevant to the auth state */}
-        {!user ? (
-          <Stack.Screen name="(auth)" />
-        ) : (
-          <Stack.Screen name="(tabs)" />
-        )}
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Details' }} />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -18,6 +18,17 @@ interface SubjectStat {
   total: number;
 }
 
+interface TimetableSlot {
+  subject: string;
+  startTime: string;
+  endTime: string;
+  room?: string;
+}
+
+interface WeeklyTimetable {
+  [day: string]: TimetableSlot[];
+}
+
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<{name: string; branch: string; semester: string; role: string} | null>(null);
@@ -28,7 +39,17 @@ export default function Dashboard() {
   const [isMassBunked, setIsMassBunked] = useState(false);
 
   useEffect(() => {
+    // Initial fetch
     fetchDashboardData();
+
+    // Listen for auth state changes to re-fetch if needed
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchDashboardData();
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   const handleMassBunkJoin = () => {
@@ -81,22 +102,24 @@ export default function Dashboard() {
       // 3. Get User Stats
       const statsDoc = await getDoc(doc(db, 'user_stats', user.uid));
       if (statsDoc.exists()) {
-        const subjects = statsDoc.data().subjects || {};
+        const subjects = (statsDoc.data().subjects || {}) as Record<string, SubjectStat>;
         setAttendance(subjects);
         
         // Calculate monthly stats from subjects
         let totalAttended = 0;
         let totalClasses = 0;
-        Object.values(subjects).forEach((stat: unknown) => {
-          const s = stat as SubjectStat;
+        Object.values(subjects).forEach((s) => {
           totalAttended += s.attended;
           totalClasses += s.total;
         });
         setMonthlyStats({ attended: totalAttended, total: totalClasses || 1, goal: 75 });
       }
 
-    } catch (error) {
-      console.error("Dashboard Fetch Error:", error);
+    } catch (error: any) {
+      console.error("Dashboard Fetch Error Detail:", error);
+      if (error.code === 'permission-denied') {
+        Alert.alert("Permission Error", "Check your Firebase Firestore rules. Ensure users have access to their own data.");
+      }
     } finally {
       setLoading(false);
     }

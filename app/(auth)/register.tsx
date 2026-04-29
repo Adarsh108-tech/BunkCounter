@@ -23,10 +23,13 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
+      console.log("Starting Firebase registration...");
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log("Auth user created:", user.uid);
 
       // Store additional user data in Firestore
+      console.log("Creating Firestore user document...");
       await setDoc(doc(db, 'users', user.uid), {
         name,
         email,
@@ -36,10 +39,12 @@ export default function RegisterScreen() {
         role: 'student', // default role
         createdAt: new Date().toISOString(),
       });
+      console.log("Firestore user document created successfully.");
 
       router.replace('/(tabs)');
     } catch (error: any) {
-      alert(error.message);
+      console.error("Registration Error Details:", error);
+      alert(`Registration Failed: ${error.message}`);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
+// @ts-ignore
+import { Auth, getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -16,16 +17,25 @@ const firebaseConfig = {
 
 // Debug check for missing variables
 if (!firebaseConfig.apiKey) {
-  console.error(
-    "Firebase Configuration Error: EXPO_PUBLIC_FIREBASE_API_KEY is missing! Check your .env file and restart Expo with 'npx expo start --clear'",
+  console.warn(
+    "Firebase Configuration Error: EXPO_PUBLIC_FIREBASE_API_KEY is missing! Check your .env file.",
   );
 }
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Auth with persistence
-let auth: ReturnType<typeof getAuth>;
-try {
+let auth: Auth;
+
+if (getApps().length > 0) {
+  try {
+    auth = getAuth(app);
+  } catch (e) {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  }
+} else {
   if (Platform.OS !== "web") {
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage),
@@ -33,9 +43,6 @@ try {
   } else {
     auth = getAuth(app);
   }
-} catch (error) {
-  // If auth was already initialized (hot reload), just get the existing instance
-  auth = getAuth(app);
 }
 
 export { auth };

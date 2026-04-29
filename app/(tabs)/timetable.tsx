@@ -9,11 +9,22 @@ import { Ionicons } from '@expo/vector-icons';
 const BRANCHES = ['CSE', 'ECE', 'ME', 'CE', 'IT'];
 const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
+interface TimetableSlot {
+  subject: string;
+  startTime: string;
+  endTime: string;
+  room?: string;
+}
+
+interface WeeklyTimetable {
+  [day: string]: TimetableSlot[];
+}
+
 export default function TimetableScreen() {
-  const [userRole, setUserRole] = useState<'admin' | 'student'>('admin'); // Defaulting to admin for UI demo
+  const [userRole, setUserRole] = useState<'admin' | 'student'>('student');
   const [selectedBranch, setSelectedBranch] = useState('CSE');
   const [selectedSem, setSelectedSem] = useState('6');
-  const [timetable, setTimetable] = useState<any>(null);
+  const [timetable, setTimetable] = useState<WeeklyTimetable>({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -152,7 +163,7 @@ export default function TimetableScreen() {
           days.map((day) => (
             <View key={day} style={styles.daySection}>
               <Text style={styles.dayTitle}>{day}</Text>
-              {timetable[day]?.map((slot: any, index: number) => (
+              {timetable[day]?.map((slot, index) => (
                 <View key={index} style={styles.slotCard}>
                   <View style={styles.timeInfo}>
                     <Text style={styles.timeText}>{slot.startTime}</Text>
